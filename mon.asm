@@ -70,29 +70,26 @@ BLSKIP		ld	a,'~'
 NEXTITEM	ld	a,(bc)			; Get character
 		cp	$0D			; CR?
 		jr	z,NEWLINE		; Yes, done this line.
+		ld	e,c
+		ld	hl,$0000
 NEXTHEX		ld	a,(bc)			; Get character
 		xor	$30			; Map digits to $0-9
 		cp	$0A			; Digit?
-	jr	c,DDIG;DIG			; Yes
+		jr	c,DIG			; Yes
 		add	a,$89			; Map letter "A"-"F" to $FA-$FF
 		cp	$FA			; Hex letter?
 		jr	c, NOTHEX		; No, character not hex
-DDIG	push bc
-	ld c,a
-	call OutHex8
-	pop bc
-	inc c
-	jp NEXTHEX
-	;(...)
 DIG		sla	a
 		sla	a			; Hex digit MSD of A.
 		sla	a
 		sla	a
+		push	bc
 		ld	b,$4			; Shift count
 HEXSHIFT	sla	a			; Hex digit left MSB to carry.
 		rl	l			; Rotate into LSD
 		rl	h			; Rotate into MSD's
 		djnz	HEXSHIFT		; Repeat 4 times
+		pop bc
 		inc	c			; Advance text index
 		jr	NEXTHEX			; Check next
 NOTHEX		ld	a,e
@@ -104,6 +101,7 @@ RUN		call	ACTRUN
 ACTRUN		jp	(hl)
 NOESCAPE	ld	a,'@'
 		call	ECHO
+		call 	DispHLhex
 		jp	ESCAPE
 
 ;Display a 16- or 8-bit number in hex.
