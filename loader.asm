@@ -101,7 +101,7 @@ WAIT		in 	a,(U1_LSR)		; Get line status
 		jr	z,WAIT			; No, wait until ready
 		ret				; Return from subroutine
 
-MSG1	.db $1B,"[2J"				; Clear screen
+MSG1	.db $1B,"[2J",$1B,"[H"			; Clear screen and return to home
 	.db "Bootloader v1.0", $0D, $0A, $00
 MSG2	.db "Transfer progress: ", $00
 MSG3	.db $0D, $0A, "OK! Now running...", $0D, $0A, $00
