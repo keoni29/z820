@@ -61,7 +61,7 @@ LOWERCASE	push	AF
 		jr	nz,NOTCR		; No, go back
 		ld	a,$0A
 		call	ECHO
-		ld	c,0
+		ld	c,$FF			; Reset text index
 SETSTOR		sla a				; Set storage mode
 SETMODE		ld	(MODE),a		; Set mode
 BLSKIP		ld	a,'~'
@@ -70,20 +70,18 @@ BLSKIP		ld	a,'~'
 NEXTITEM	ld	a,(bc)			; Get character
 		cp	$0D			; CR?
 		jr	z,NEWLINE		; Yes, done this line.
-NEXTHEX		call	OutHex8
-		ld	a,$0D
-		call	ECHO
-		ld	a,$0A
-		call	ECHO
-
-		ld	a,(bc)			; Get character
+NEXTHEX		ld	a,(bc)			; Get character
 		xor	$30			; Map digits to $0-9
 		cp	$0A			; Digit?
 	jr	c,DDIG;DIG			; Yes
 		add	a,$89			; Map letter "A"-"F" to $FA-$FF
 		cp	$FA			; Hex letter?
 		jr	c, NOTHEX		; No, character not hex
-DDIG	inc c
+DDIG	push bc
+	ld c,a
+	call OutHex8
+	pop bc
+	inc c
 	jp NEXTHEX
 	;(...)
 DIG		sla	a
