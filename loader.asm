@@ -1,5 +1,4 @@
 ; Z820 bootloader version 0.1
-; Error: Does not execute properly
 
 #include "uart.inc"
 
@@ -14,7 +13,7 @@ SZL	.equ	RAM + 2
 SZH	.equ	RAM + 3
 RL	.equ	RAM + 4
 RH	.equ	RAM + 5
-
+STACK	.equ	RAM + 256 + 128			; 128 byte stack
 
 	.org $0
 
@@ -22,7 +21,8 @@ RH	.equ	RAM + 5
 		jp	ECHO
 		jp	SHWMSG
 
-MAIN		ld 	a,$87			; 8b 2s no parity, DLAB=1
+MAIN		ld	sp,STACK		; Initialize stack pointer
+		ld 	a,$87			; 8b 2s no parity, DLAB=1
 		out 	(U1_LCR),a
 		ld 	a,U1_DIV & $FF		; LSB of clock divider
 		out 	(U1_DLL),a
