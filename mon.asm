@@ -74,6 +74,8 @@ NEXTITEM	ld	a,(bc)			; Get character
 		jr	z,SETMODE		; Set BLOCK XAM mode.
 		cp	':'			; ':'?
 		jr	z,SETSTOR		; Yes, set STOR mode
+		cp	'R'			; 'R'?
+		jr	z,RUN			; Yes, run user program
 		ld	e,c			; Save c for comparison
 		ld	hl,$0000		; $0000 -> HL
 NEXTHEX		ld	a,(bc)			; Get character
@@ -145,17 +147,15 @@ XAMNEXT		ld	a,0			; 0->MODE (XAM mode)
 		jr	nz,NOTHI
 		ld	a,l
 		cp	e
-		exx
-		jr	z,FNEXTITEM		; Yes, so no more data to print
-NOTHI		inc	hl			; Increment XAM index
+		jp	z,NEXTITEM		; Yes, so no more data to print
+NOTHI		exx
+		inc	hl			; Increment XAM index
 MOD8CHK		ld	a,l			; Check low order XAM index byte
 		and	$0F			; Get 16 bytes per line
 		jr	NXTPRNT	
 FXAMNEXT	ld	a,h
 		exx
 		jr	XAMNEXT
-FNEXTITEM	exx
-		jp	NEXTITEM
 
 ;Display a 16- or 8-bit number in hex.
 DispHLhex
