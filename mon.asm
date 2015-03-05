@@ -62,16 +62,20 @@ LOWERCASE	push	AF
 		ld	a,$0A
 		call	ECHO
 		ld	c,$FF			; Reset text index
-SETSTOR		sla a				; Set storage mode
-SETMODE		ld	(MODE),a		; Set mode
-BLSKIP		ld	a,'~'
-		call	ECHO
-		inc	c			; Skip character
+		ld	a,$00			; For XAM mode
+SETSTOR		sla	a			; Leaves 3
+SETMODE		ld	(MODE),a		; $00 = XAM, $74 = STOR, $2E = BLOK XAM.
+BLSKIP		inc	c			; Skip character
 NEXTITEM	ld	a,(bc)			; Get character
 		cp	$0D			; CR?
 		jr	z,NEWLINE		; Yes, done this line.
-		ld	e,c
-		ld	hl,$0000
+		cp	'.'			; '.'?
+		jr	c,BLSKIP		; Skip delimiter
+		jr	z,SETMODE		; Set BLOCK XAM mode.
+		cp	':'			; ':'?
+		jr	z,SETSTOR		; Yes, set STOR mode
+		ld	e,c			; Save c for comparison
+		ld	hl,$0000		; $0000 -> HL
 NEXTHEX		ld	a,(bc)			; Get character
 		xor	$30			; Map digits to $0-9
 		cp	$0A			; Digit?
@@ -84,11 +88,11 @@ DIG		sla	a
 		sla	a
 		sla	a
 		push	bc
-		ld	b,$4			; Shift count
-HEXSHIFT	sla	a			; Hex digit left MSB to carry.
-		rl	l			; Rotate into LSD
-		rl	h			; Rotate into MSD's
-		djnz	HEXSHIFT		; Repeat 4 times
+			ld	b,$4			; Shift count
+HEXSHIFT		sla	a			; Hex digit left MSB to carry.
+			rl	l			; Rotate into LSD
+			rl	h			; Rotate into MSD's
+			djnz	HEXSHIFT		; Repeat 4 times
 		pop bc
 		inc	c			; Advance text index
 		jr	NEXTHEX			; Check next
@@ -96,29 +100,77 @@ NOTHEX		ld	a,e
 		cp	c			; Check if L, H empty (no hex digits)
 		jr	nz,NOESCAPE		; Branch out of range, so bit of a hack here.
 		jp	ESCAPE
-RUN		call	ACTRUN
+RUN		call	ACTRUN			; Call program like subroutine, so it returns to the monitor
 		jp	SOFTRESET
-ACTRUN		jp	(hl)
-NOESCAPE	ld	a,'@'
+ACTRUN		jp	(hl)			; Run user program
+NOESCAPE	ld	a,(MODE)
+		cp	$74
+		jr	nz,NOTSTOR
+		ld	a,l			; LSD's of hex data
+		exx				; Swap hl and hl'
+		ld	(hl),a			; Store at current store index
+		inc	hl			; Increment store index
+		exx				; Swap hl' and hl back
+		jp	NEXTITEM
+NOTSTOR		ld	a,(MODE)
+		cp	$2E			; Mode block XAM?
+		jr	z,FXAMNEXT		; Yes, process next
+SETADR		push	hl
+		exx
+		pop	hl			; Get hl in hl' and bc'
+		ld	b,h
+		ld	c,l
+NXTPRNT		jr	nz,PRDATA		; nz means no address to print
+		ld	a,$0A			; CRNL
 		call	ECHO
-		call 	DispHLhex
-		jp	ESCAPE
+		ld	a,$0D
+		call	ECHO
+		call	DispHLhex
+		ld	a,':'			; ':'
+		call	ECHO
+PRDATA		ld	a,' '			; Blank
+		call	ECHO
+		ld	a,(hl)			; Get byte at XAM index
+		ld	d,a
+		call	OutHex8
+XAMNEXT		ld	a,0			; 0->MODE (XAM mode)
+		ld	(MODE),a
+		; Compare hl with hl'
+		push	hl			; Get hl' in de
+		exx
+		pop	de
+		ld	a,h			; Are hl and hl' equal?
+		cp	d
+		jr	nz,NOTHI
+		ld	a,l
+		cp	e
+		exx
+		jr	z,FNEXTITEM		; Yes, so no more data to print
+NOTHI		inc	hl			; Increment XAM index
+MOD8CHK		ld	a,l			; Check low order XAM index byte
+		and	$0F			; Get 16 bytes per line
+		jr	NXTPRNT	
+FXAMNEXT	ld	a,h
+		exx
+		jr	XAMNEXT
+FNEXTITEM	exx
+		jp	NEXTITEM
 
 ;Display a 16- or 8-bit number in hex.
 DispHLhex
 ; Input: HL
-		ld  c,h
+		ld  d,h
 		call  OutHex8
-		ld  c,l
+		ld  d,l
 OutHex8
-; Input: C
-		ld  a,c
+; Input: D
+		ld  a,d
 		rra
 		rra
 		rra
 		rra
 		call  Conv
-		ld  a,c
+		ld  a,d
 Conv
 		and  $0F
 		add  a,$90

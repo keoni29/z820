@@ -1,0 +1,11 @@
+ld	d,(hl)
+		call	OutHex8
+		ld	a,'@'
+		call	ECHO
+		call 	DispHLhex
+		ld	a,'M'
+		call	ECHO
+		ld	a,(MODE)
+		ld	d,a
+		call	OutHex8
+		jp	NEXTITEM
