@@ -120,6 +120,7 @@ SETADR		push	hl
 		pop	hl			; Get hl in hl' and bc'
 		ld	b,h
 		ld	c,l
+		xor	a			; set zero flag
 NXTPRNT		jr	nz,PRDATA		; nz means no address to print
 		ld	a,$0A			; CRNL
 		call	ECHO
