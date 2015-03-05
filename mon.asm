@@ -102,17 +102,21 @@ NOTHEX		ld	a,e
 		cp	c			; Check if L, H empty (no hex digits)
 		jr	nz,NOESCAPE		; Branch out of range, so bit of a hack here.
 		jp	ESCAPE
-RUN		call	ACTRUN			; Call program like subroutine, so it returns to the monitor
+RUN		exx				; Get XAM index in HL
+		push	hl
+		exx
+		pop	hl
+		call	ACTRUN			; Call program like subroutine, so it returns to the monitor
 		jp	SOFTRESET
 ACTRUN		jp	(hl)			; Run user program
 NOESCAPE	ld	a,(MODE)
 		cp	$74
 		jr	nz,NOTSTOR
 		ld	a,l			; LSD's of hex data
-		exx				; Swap hl and hl'
-		ld	(hl),a			; Store at current store index
-		inc	hl			; Increment store index
-		exx				; Swap hl' and hl back
+		exx				; Swap bc and bc'
+		ld	(bc),a			; Store at current store index
+		inc	bc			; Increment store index
+		exx				; Swap bc' and bc back
 		jp	NEXTITEM
 NOTSTOR		ld	a,(MODE)
 		cp	$2E			; Mode block XAM?
