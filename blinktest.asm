@@ -1,5 +1,5 @@
 ; Blinking LED test program
-.org	$4000 - 4
+.org	$5000 - 4
 .dw	START			; Bootloader parameters
 .dw	DONE - START
 

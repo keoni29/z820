@@ -18,12 +18,10 @@ SYSFREQ	.equ	20000000
 U1_BAUD	.equ	19200
 U1_DIV	.equ	SYSFREQ / (16 * U1_BAUD)
 
-	.org	$0000
-START		jp	RESET			; System jumptable
-		jp	ECHO
-		jp	SHWMSG
-		jp	DispHLhex
-		jp	OutHex8
+	.org	RAM + $1000 - 4
+	.dw	RESET				; Bootloader parameters
+	.dw	END - RESET
+
 RESET		ld	sp,STACK		; Initialize stack	
 		ld 	a,$87			; 8b 2s no parity, DLAB=1
 		out 	(U1_LCR),a
@@ -298,4 +296,3 @@ MSG1	.db $1B,"[2J",$1B,"[H"			; Clear screen and return
 MSG2	.db "Transfer progress: ", $00
 MSG3	.db "Done!",$0A,$0D,$00
 END
-.fill	$2000-(END-START)
